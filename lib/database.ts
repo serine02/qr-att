@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from "expo-sqlite";
 
 export type AttendanceRecord = {
   id: number;
@@ -32,7 +32,7 @@ let db: SQLite.SQLiteDatabase | null = null;
 
 async function getDb() {
   if (!db) {
-    db = await SQLite.openDatabaseAsync('qr-attendance.db');
+    db = await SQLite.openDatabaseAsync("qr-attendance.db");
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
       CREATE TABLE IF NOT EXISTS events (
@@ -55,17 +55,17 @@ async function getDb() {
 
 export async function registerAttendance(
   rawPayload: string,
-  studentId: string
+  studentId: string,
 ): Promise<RegisterResult> {
   let payload: EventPayload;
   try {
     payload = JSON.parse(rawPayload);
   } catch {
-    return { success: false, message: 'Invalid QR code.' };
+    return { success: false, message: "Invalid QR code." };
   }
 
   if (payload.v !== 1 || !payload.event) {
-    return { success: false, message: 'Not an attendance QR code.' };
+    return { success: false, message: "Not an attendance QR code." };
   }
 
   const now = Date.now();
@@ -73,43 +73,43 @@ export async function registerAttendance(
   const end = payload.end ? new Date(payload.end).getTime() : null;
 
   if (start && now < start) {
-    return { success: false, message: 'Event has not started yet.' };
+    return { success: false, message: "Event has not started yet." };
   }
   if (end && now > end) {
-    return { success: false, message: 'Event has already ended.' };
+    return { success: false, message: "Event has already ended." };
   }
 
   const database = await getDb();
   const title = payload.title ?? payload.event;
 
   await database.runAsync(
-    'INSERT OR IGNORE INTO events (eventId, title, start, end) VALUES (?, ?, ?, ?)',
+    "INSERT OR IGNORE INTO events (eventId, title, start, end) VALUES (?, ?, ?, ?)",
     payload.event,
     title,
-    payload.start ?? '',
-    payload.end ?? ''
+    payload.start ?? "",
+    payload.end ?? "",
   );
 
   const result = await database.runAsync(
-    'INSERT OR IGNORE INTO attendance (studentId, eventId, scannedAt) VALUES (?, ?, ?)',
+    "INSERT OR IGNORE INTO attendance (studentId, eventId, scannedAt) VALUES (?, ?, ?)",
     studentId,
     payload.event,
-    new Date().toISOString()
+    new Date().toISOString(),
   );
 
   if (result.changes === 0) {
     return {
       success: false,
-      message: 'Already registered for this event.',
+      message: "Already registered for this event.",
       eventTitle: title,
     };
   }
 
-  return { success: true, message: 'Attendance recorded!', eventTitle: title };
+  return { success: true, message: "Attendance recorded!", eventTitle: title };
 }
 
 export async function getAttendanceHistory(
-  studentId: string
+  studentId: string,
 ): Promise<AttendanceRecord[]> {
   const database = await getDb();
   const rows = await database.getAllAsync<AttendanceRecord>(
@@ -118,7 +118,7 @@ export async function getAttendanceHistory(
      JOIN events e ON e.eventId = a.eventId
      WHERE a.studentId = ?
      ORDER BY a.scannedAt DESC`,
-    studentId
+    studentId,
   );
   return rows;
 }
@@ -126,10 +126,10 @@ export async function getAttendanceHistory(
 export async function createEvent(event: Event): Promise<void> {
   const database = await getDb();
   await database.runAsync(
-    'INSERT OR REPLACE INTO events (eventId, title, start, end) VALUES (?, ?, ?, ?)',
+    "INSERT OR REPLACE INTO events (eventId, title, start, end) VALUES (?, ?, ?, ?)",
     event.eventId,
     event.title,
     event.start,
-    event.end
+    event.end,
   );
 }
