@@ -47,9 +47,15 @@
     "extra": {
       "router": {},
       "eas": {
+<<<<<<< HEAD
         "projectId": "d6281715-079c-4370-8d64-28a82f8fc511"
       }
     },
     "owner": "gilhang_123"
+=======
+        "projectId": "dbf4fe6e-f88a-4973-95d0-d00e9a1734b0"
+      }
+    }
+>>>>>>> 2731e2d013b50532b4cd0e96e0ba9cb8afb6bb04
   }
 }
