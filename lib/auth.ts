@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { supabase } from "./supabase";
-import type { Session, User } from "@supabase/supabase-js";
+import { useSyncExternalStore } from 'react';
+import { supabase } from './supabase';
+import type { Session, User } from '@supabase/supabase-js';
 
 type AuthState = {
   session: Session | null;
@@ -8,42 +8,86 @@ type AuthState = {
   loading: boolean;
 };
 
-let globalSession: Session | null = null;
-let globalUser: User | null = null;
-let globalLoading = false;
-let listeners: Set<() => void> = new Set();
+let globalState: AuthState = {
+  session: null,
+  user: null,
+  loading: true,
+};
+
+const listeners = new Set<() => void>();
 
 function notify() {
-  listeners.forEach((l) => l());
+  listeners.forEach((listener) => listener());
 }
 
 export function setAuth(session: Session | null) {
-  globalSession = session;
-  globalUser = session?.user ?? null;
-  globalLoading = false;
+  globalState = {
+    session,
+    user: session?.user ?? null,
+    loading: false,
+  };
   notify();
 }
 
-export function useAuth(): AuthState {
-  const [, forceRender] = useState(0);
+let authListenerStarted = false;
 
-  useEffect(() => {
-    const listener = () => forceRender((n) => n + 1);
-    listeners.add(listener);
-    return () => {
-      listeners.delete(listener);
-    };
-  }, []);
+function ensureAuthListener() {
+  if (authListenerStarted) return;
+  authListenerStarted = true;
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setAuth(session);
+  });
+  supabase.auth.getSession().then(({ data }) => {
+    setAuth(data.session);
+  });
+}
 
-  return {
-    session: globalSession,
-    user: globalUser,
-    loading: globalLoading,
+function subscribe(onStoreChange: () => void) {
+  ensureAuthListener();
+  listeners.add(onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
   };
 }
 
-export async function signUp(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+function getSnapshot(): AuthState {
+  return globalState;
+}
+
+export function useAuth(): AuthState {
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+}
+
+export type SignUpProfile = {
+  full_name: string;
+  role: 'student' | 'teacher';
+};
+
+export async function signUp(
+  email: string,
+  password: string,
+  profile?: SignUpProfile
+) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: profile
+      ? { data: { full_name: profile.full_name, role: profile.role } }
+      : undefined,
+  });
+  if (!error && data.session && profile) {
+    await supabase
+      .from('profiles')
+      .upsert(
+        {
+          id: data.session.user.id,
+          email,
+          full_name: profile.full_name,
+          role: profile.role,
+        },
+        { onConflict: 'id' }
+      );
+  }
   if (!error && data.session) {
     setAuth(data.session);
   }
@@ -51,10 +95,7 @@ export async function signUp(email: string, password: string) {
 }
 
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (!error && data.session) {
     setAuth(data.session);
   }

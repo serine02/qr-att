@@ -15,11 +15,14 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+/android
+/ios
 
 # macOS
 .DS_Store
 
 # local env files
+.env
 .env*.local
 
 # teaching materials

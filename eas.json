@@ -1,16 +1,11 @@
 {
   "cli": {
-<<<<<<< HEAD
-    "version": ">= 16.18.0",
+"version": ">= 16.18.0",
     "appVersionSource": "remote"
-=======
-    "version": ">= 15.0.0"
->>>>>>> 2731e2d013b50532b4cd0e96e0ba9cb8afb6bb04
   },
   "build": {
     "development": {
       "developmentClient": true,
-<<<<<<< HEAD
       "distribution": "internal"
     },
     "preview": {
@@ -24,23 +19,3 @@
     "production": {}
   }
 }
-=======
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "production": {
-      "android": {
-        "buildType": "app-bundle"
-      }
-    }
-  }
-}
->>>>>>> 2731e2d013b50532b4cd0e96e0ba9cb8afb6bb04
